@@ -43,8 +43,18 @@ class Fetch_wiki:
         p_wiki = self.wiki_wiki.page(page_name)
         return p_wiki.summary
 
-fp = Fetch_wiki()
-df  = pd.read_csv('medicines.csv')
-df['name'] = df['drug_page'].apply(lambda x: x.split('wiki/')[-1])
-df['content'] = df['name'].apply(lambda x: fp.fetch(x))
+
+def common_preprocessing(df):
+    df = df.dropna(subset=['content'])
+    df = df.drop_duplicates(subset=['content'])
+    df = df.drop_duplicates(subset=['name'])
+    df['len'] = df['content'].apply(lambda x: len(x.split()))
+    df = df.sort_values('len', ascending = True)
+    return df
+
+
+df = common_preprocessing(df)
+df = df[df['len']>=40]
+df['content'] = df['content'].apply(lambda x: limit_to_approx_60_words(x))
+df = common_preprocessing(df)
 df
