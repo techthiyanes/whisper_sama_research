@@ -44,6 +44,9 @@ class Fetch_wiki:
         return p_wiki.summary
 
 
+import pandas as pd
+df_1 = pd.read_csv('medicines_data.csv')
+
 def common_preprocessing(df):
     df = df.dropna(subset=['content'])
     df = df.drop_duplicates(subset=['content'])
@@ -53,8 +56,26 @@ def common_preprocessing(df):
     return df
 
 
-df = common_preprocessing(df)
-df = df[df['len']>=40]
-df['content'] = df['content'].apply(lambda x: limit_to_approx_60_words(x))
-df = common_preprocessing(df)
-df
+# Define the function to limit words
+def limit_to_approx_60_words(sentence, limit_=60, backtrack_limit=10):
+    words = sentence.split()
+    if len(words) <= limit_:
+        return sentence
+
+    # Initial cut-off at the word limit
+    limited_text = " ".join(words[:limit_])
+
+    # Search for the last punctuation within the backtrack_limit
+    for i in range(limit_ - 1, limit_ - backtrack_limit, -1):
+        if words[i][-1] in ".?!;,":  # Add any other punctuation marks if needed
+            return " ".join(words[: i + 1])
+
+    # If no punctuation is found within the backtrack_limit, return the limited_text
+    return limited_text
+
+
+df_1 = common_preprocessing(df_1)
+df_1 = df_1[df_1['len']>=40]
+df_1['content'] = df_1['content'].apply(lambda x: limit_to_approx_60_words(x))
+df_1 = common_preprocessing(df_1)
+df_1.to_csv('medicine_updated.csv', index=False)
